@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#07152b">
+<title>Blue Hour · Smart Living Room Clock</title>
+<style>
+:root{--navy:#061226;--ink:#e9f5ff;--muted:#91aac6;--line:rgba(142,191,236,.18);--panel-strong:rgba(18,51,93,.92);--cyan:#7de3ff;--gold:#ffd58a;--danger:#ff9e9e;--brightness:1;font-family:"Trebuchet MS","Segoe UI",sans-serif;color:var(--ink);background:var(--navy)}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0}
+body{overflow:hidden;background:radial-gradient(circle at 18% 20%,#123c69 0,transparent 32%),linear-gradient(135deg,#061226 0%,#0a2040 54%,#051022 100%);color:var(--ink);transition:filter 1.2s ease;filter:brightness(var(--brightness))}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.3;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:48px 48px;mask-image:linear-gradient(to bottom,black,transparent 90%)}
+button,input{font:inherit}button{cursor:pointer}
+.app-shell{position:relative;height:100vh;height:100dvh;padding:clamp(16px,3vh,40px) clamp(20px,3vw,56px);display:flex;flex-direction:column;gap:clamp(12px,3vh,36px)}
+.topbar,.footerbar{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.brand{display:flex;align-items:center;gap:13px;letter-spacing:.2em;text-transform:uppercase;font-size:12px;color:var(--muted)}
+.brand-mark{display:grid;place-items:center;width:33px;height:33px;border:1px solid rgba(125,227,255,.55);color:var(--cyan);border-radius:50%}
+.status-strip{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#78f1b4;box-shadow:0 0 13px #78f1b4}
+.status-dot.offline{background:var(--danger);box-shadow:0 0 13px var(--danger)}
+.clock-stage{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.clock-copy{width:100%}
+.clock-copy{animation:rise .8s ease both}
+.eyebrow{display:none;color:var(--cyan);text-transform:uppercase;letter-spacing:.28em;font-size:11px;margin-bottom:16px}
+.clock{font-variant-numeric:tabular-nums;letter-spacing:-.07em;font-size:clamp(60px,min(38vw,60vh),900px);line-height:.86;font-weight:300;white-space:nowrap;color:#f5fbff;text-shadow:0 0 40px rgba(125,227,255,.17)}
+.seconds{color:var(--cyan);font-size:.28em;letter-spacing:-.02em;vertical-align:top;margin-left:12px;position:relative;top:.2em}
+.ampm{color:var(--gold);font-size:13px;letter-spacing:.22em;display:inline-block;margin:6px 16px 0 0;text-transform:uppercase}
+.date-line{display:inline-block;margin-top:6px;color:var(--muted);font-size:clamp(16px,2vw,23px);letter-spacing:.04em}
+.info-grid{display:contents;animation:rise .8s .12s ease both}
+.panel{border:1px solid var(--line);background:linear-gradient(145deg,rgba(23,59,103,.72),rgba(8,26,53,.76));backdrop-filter:blur(18px);border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.weather-panel{padding:16px;min-height:0}
+.panel-heading{display:flex;justify-content:space-between;align-items:center;color:var(--muted);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+.weather-location{color:var(--ink);font-size:18px;margin-top:17px;min-height:24px}
+.weather-main{display:flex;align-items:center;justify-content:space-between;margin-top:12px}
+.weather-temp{color:var(--cyan);font-size:49px;letter-spacing:-.07em}
+.weather-icon{font-size:43px}
+.weather-condition{color:var(--muted);font-size:13px;margin-top:4px}
+.weather-meta{display:flex;gap:25px;border-top:1px solid var(--line);padding-top:14px;margin-top:16px;color:var(--muted);font-size:12px}
+.weather-meta strong{color:var(--ink);font-weight:400;display:block;margin-top:4px}
+.controls-panel{padding:17px 20px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.control-label{color:var(--muted);font-size:12px}
+.control-value{color:var(--ink);font-size:12px;margin-top:4px}
+.icon-button,.enter-button,.small-button{border:1px solid var(--line);color:var(--ink);background:rgba(20,59,101,.7);transition:background .2s,transform .2s,border-color .2s}
+.icon-button:hover,.enter-button:hover,.small-button:hover{background:rgba(77,157,255,.3);border-color:rgba(125,227,255,.65);transform:translateY(-2px)}
+.icon-button{width:42px;height:42px;border-radius:50%;font-size:18px}
+.small-button{padding:9px 13px;border-radius:5px;font-size:12px}
+.footerbar{color:var(--muted);font-size:11px;letter-spacing:.12em;text-transform:uppercase}
+.footer-actions{display:flex;align-items:center;gap:12px}
+.welcome{position:fixed;z-index:10;inset:0;display:grid;place-items:center;padding:24px;background:rgba(4,14,31,.9);backdrop-filter:blur(20px);transition:opacity .5s,visibility .5s}
+.welcome.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.welcome-card{width:min(560px,100%);text-align:center;padding:42px;border:1px solid rgba(125,227,255,.28);background:linear-gradient(145deg,rgba(19,56,99,.9),rgba(5,18,38,.96));border-radius:14px;box-shadow:0 30px 90px rgba(0,0,0,.45);animation:rise .8s ease both}
+.welcome-sun{font-size:40px;color:var(--gold);margin-bottom:18px}
+.welcome h1{font-size:clamp(30px,5vw,50px);letter-spacing:-.03em;font-weight:300;margin:0}
+.welcome p{max-width:390px;margin:16px auto 30px;color:var(--muted);line-height:1.6;font-size:14px}
+.enter-button{padding:15px 23px;border-radius:5px;color:#061226;background:var(--cyan);border-color:var(--cyan);font-weight:700;letter-spacing:.08em;font-size:12px}
+.settings-backdrop{position:fixed;z-index:8;inset:0;background:rgba(2,10,23,.55);opacity:0;visibility:hidden;transition:opacity .25s,visibility .25s}
+.settings-backdrop.open{opacity:1;visibility:visible}
+.settings{position:fixed;z-index:9;top:0;right:0;bottom:0;width:min(400px,92vw);padding:32px;background:#091b35;border-left:1px solid var(--line);transform:translateX(102%);transition:transform .35s cubic-bezier(.2,.8,.2,1);overflow-y:auto}
+.settings.open{transform:translateX(0)}
+.settings-head{display:flex;justify-content:space-between;align-items:center;padding-bottom:26px;border-bottom:1px solid var(--line)}
+.settings h2{margin:0;font-size:20px;font-weight:400}
+.setting{padding:23px 0;border-bottom:1px solid var(--line)}
+.setting-title{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em;margin-bottom:14px}
+.segmented{display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:4px;background:rgba(0,0,0,.2);border-radius:6px}
+.segmented button{border:0;border-radius:4px;padding:10px;color:var(--muted);background:transparent;font-size:12px}
+.segmented button.active{color:var(--navy);background:var(--cyan)}
+.range-row{display:flex;align-items:center;gap:12px}
+input[type=time]{border:1px solid var(--line);border-radius:5px;background:rgba(0,0,0,.16);color:var(--ink);padding:8px;color-scheme:dark}
+input[type=range]{width:100%;accent-color:var(--cyan)}
+.range-number{color:var(--cyan);font-size:13px;min-width:39px;text-align:right}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;color:var(--ink);font-size:14px}
+.toggle{position:relative;width:44px;height:24px;border:0;border-radius:20px;background:#234366;flex:none}
+.toggle::after{content:"";position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;background:var(--muted);transition:transform .2s,background .2s}
+.toggle.on{background:var(--cyan)}
+.toggle.on::after{transform:translateX(20px);background:var(--navy)}
+.setting-note{color:var(--muted);font-size:12px;line-height:1.55;margin:10px 0 0}
+.weather-search{display:flex;gap:8px}
+.weather-search input{min-width:0;flex:1;border:1px solid var(--line);border-radius:5px;background:rgba(0,0,0,.16);color:var(--ink);padding:10px;outline:none}
+.weather-search input:focus{border-color:var(--cyan)}
+.location-results{display:grid;gap:5px;margin-top:9px}
+.location-option{text-align:left;border:1px solid var(--line);background:rgba(20,59,101,.5);color:var(--ink);border-radius:4px;padding:9px;font-size:12px}
+.location-option:hover{border-color:var(--cyan)}
+.search-status{color:var(--muted);font-size:11px;margin:8px 0 0;min-height:16px}
+.toast{position:fixed;z-index:12;left:50%;bottom:28px;transform:translate(-50%,20px);opacity:0;pointer-events:none;padding:11px 16px;background:var(--panel-strong);border:1px solid var(--line);border-radius:5px;font-size:12px;transition:opacity .25s,transform .25s}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.hidden{display:none!important}
+.clock-copy{grid-column:2;grid-row:1/span 3}
+.weather-panel{grid-column:1;grid-row:1/span 3;align-self:center;text-align:left}
+.controls-panel{grid-column:3;grid-row:1/span 3;align-self:center;text-align:left}
+.ticker{overflow:hidden;white-space:nowrap;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:10px 0;color:var(--muted)}
+.ticker-track{display:inline-flex;align-items:center;gap:44px;font-size:clamp(16px,2.4vw,26px);animation:marquee 30s linear infinite}
+.ticker b{font-weight:400;color:var(--cyan)}
+.ticker #weatherTemp{color:var(--cyan);font-size:1.3em}
+.ticker #weatherLocation{color:var(--ink)}
+.speedbar{display:flex;align-items:center;gap:14px}
+#speedValue{color:var(--cyan);font-size:clamp(30px,5.5vw,72px);line-height:1;letter-spacing:0;text-transform:none}
+#speedNote{text-transform:none;letter-spacing:0;font-size:clamp(12px,1.6vw,18px)}
+.speedbar .control-label{font-size:clamp(12px,1.6vw,18px)}
+@keyframes marquee{from{transform:translateX(100vw)}to{transform:translateX(-100%)}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+@media (max-width:760px){body{overflow:auto}.app-shell{height:auto;min-height:100svh;padding:22px;gap:28px}.clock-stage{display:flex;flex-direction:column;gap:28px}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;width:100%}.clock{font-size:clamp(62px,22vw,200px)}.weather-panel{min-height:auto}}
+@media (max-width:470px){.info-grid{grid-template-columns:1fr}.welcome-card{padding:30px 22px}}
+</style>
+</head>
+<body>
+<div class="welcome" id="welcome">
+  <section class="welcome-card">
+    <div class="welcome-sun" aria-hidden="true">◌</div>
+    <h1>Blue Hour</h1>
+    <p>Your quiet smart-home clock for a calmer room. Enter fullscreen for the best wall-mounted display.</p>
+    <button class="enter-button" id="enterFullscreen">ENTER FULL SCREEN&nbsp; ↗</button>
+    <button class="small-button" id="skipWelcome" style="margin-left:8px">Continue without it</button>
+  </section>
+</div>
+
+<main class="app-shell" id="app">
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">✦</span> Smart living room</div>
+    <div class="status-strip"><span class="status-dot" id="connectionDot"></span><span id="connectionText">Online</span><span id="batteryText" class="hidden"></span></div>
+  </header>
+  <section class="ticker" aria-label="Current conditions"><div class="ticker-track"><span id="weatherIcon">◌</span><span id="weatherLocation">Choose a city in settings</span><span id="weatherTemp">—</span><span id="weatherCondition">Live weather appears here</span><span>Humidity <b id="humidity">—</b></span><span>Wind <b id="wind">—</b></span><span>Updated <b id="weatherUpdated">—</b></span></div></section>
+  <section class="clock-stage">
+    <div class="clock-copy">
+      <div class="eyebrow" id="timeOfDay">Local time</div>
+      <div class="clock" id="clock">00:00<span class="seconds" id="seconds">00</span></div>
+      <div class="ampm" id="ampm">24-hour time</div>
+      <div class="date-line" id="dateLine">—</div>
+    </div>
+    <div class="info-grid">
+      <div class="panel controls-panel hidden"><div><div class="control-label">Night mode</div><div class="control-value" id="nightModeLabel">Automatic</div></div><button class="toggle" id="nightToggle" aria-label="Toggle manual night mode" aria-pressed="false"></button></div>
+      <div class="panel controls-panel hidden"><div><div class="control-label">Screen wake</div><div class="control-value" id="wakeLabel">Checking…</div></div><span aria-hidden="true">◌</span></div>
+    </div>
+  </section>
+  <footer class="footerbar"><div class="speedbar"><span class="control-label">Wi-Fi speed</span><span id="speedValue">Testing…</span><span id="speedNote">Download</span><button class="small-button" id="speedRetest">Retest</button></div><div class="footer-actions"><button class="small-button" id="fullscreenButton">Fullscreen</button><button class="icon-button" id="settingsButton" aria-label="Open settings">⚙</button></div></footer>
+</main>
+
+<div class="settings-backdrop" id="settingsBackdrop"></div>
+<aside class="settings" id="settingsPanel" aria-label="Clock settings">
+  <div class="settings-head"><h2>Clock settings</h2><button class="icon-button" id="closeSettings" aria-label="Close settings">×</button></div>
+  <div class="setting"><div class="setting-title">Clock format</div><div class="segmented"><button id="format12">12 hour</button><button id="format24">24 hour</button></div></div>
+  <div class="setting"><div class="setting-title">Display brightness</div><div class="range-row"><input id="brightnessRange" type="range" min="35" max="120" value="100"><span class="range-number" id="brightnessValue">100%</span></div><p class="setting-note">Automatic evening dimming still follows the room schedule.</p></div>
+  <div class="setting"><div class="toggle-row"><span>Manual night mode</span><button class="toggle" id="nightToggleSettings" aria-label="Toggle manual night mode" aria-pressed="false"></button></div><p class="setting-note">Overrides the automatic 6 PM–6 AM schedule until switched off.</p></div>
+  <div class="setting"><div class="setting-title">Weather location</div><div class="weather-search"><input id="cityInput" placeholder="Search city" autocomplete="address-level2"><button class="small-button" id="searchCity">Search</button></div><div class="search-status" id="searchStatus"></div><div class="location-results" id="locationResults"></div><p class="setting-note">Weather by Open-Meteo. Live data only; no API key required.</p></div>
+  <div class="setting"><div class="toggle-row"><span>Scheduled screen off</span><button class="toggle" id="sleepToggle" aria-label="Toggle scheduled screen off" aria-pressed="false"></button></div><div class="range-row" style="margin-top:14px;flex-wrap:wrap"><span class="control-label">Off at</span><input type="time" id="offTime"><span class="control-label">On at</span><input type="time" id="onTime"></div><p class="setting-note">At the off time the page turns black and stops keeping the screen awake, so the tablet sleeps by itself. Turn off "Stay awake" in Developer options for this to work. Press the power button in the morning to wake it.</p></div>
+  <div class="setting"><div class="setting-title">Device support</div><div class="toggle-row"><span>Fullscreen status</span><span id="fullscreenStatus">Windowed</span></div><div class="toggle-row" style="margin-top:16px"><span>Wake Lock status</span><span id="wakeStatusDetail">Checking…</span></div><p class="setting-note">Wake Lock keeps the page awake when supported. Android system battery restrictions may still apply.</p></div>
+</aside>
+<div id="sleepOverlay" class="hidden" style="position:fixed;inset:0;background:#000;z-index:20"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem('blue-hour-settings') || '{}'); } catch (e) {}
+  const state = { format: saved.format || '24', brightness: Number(saved.brightness || 100), manualNight: !!saved.manualNight, city: saved.city || null, sleepOn: !!saved.sleepOn, offTime: saved.offTime || '00:00', onTime: saved.onTime || '06:00', wakeLock: null };
+  const weatherCodes = {0:['Clear sky','☀'],1:['Mainly clear','🌤'],2:['Partly cloudy','⛅'],3:['Overcast','☁'],45:['Fog','〰'],48:['Rime fog','〰'],51:['Light drizzle','⌁'],53:['Drizzle','⌁'],55:['Heavy drizzle','⌁'],61:['Light rain','☂'],63:['Rain','☂'],65:['Heavy rain','☂'],71:['Light snow','❄'],73:['Snow','❄'],75:['Heavy snow','❄'],80:['Rain showers','☂'],81:['Rain showers','☂'],82:['Heavy showers','☂'],95:['Thunderstorm','ϟ'],96:['Storm with hail','ϟ'],99:['Storm with hail','ϟ']};
+
+  function persist() { try { localStorage.setItem('blue-hour-settings', JSON.stringify({ format: state.format, brightness: state.brightness, manualNight: state.manualNight, city: state.city, sleepOn: state.sleepOn, offTime: state.offTime, onTime: state.onTime })); } catch (e) {} }
+  function showToast(m) { const t = $('toast'); t.textContent = m; t.classList.add('show'); clearTimeout(showToast.timer); showToast.timer = setTimeout(() => t.classList.remove('show'), 3200); }
+  function updateConnection() { const on = navigator.onLine; $('connectionDot').classList.toggle('offline', !on); $('connectionText').textContent = on ? 'Online' : 'Offline'; }
+
+  function updateClock() {
+    const now = new Date(), hour = now.getHours();
+    let dh = hour; if (state.format === '12') dh = hour % 12 || 12;
+    $('clock').firstChild.nodeValue = String(dh).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+    $('seconds').textContent = String(now.getSeconds()).padStart(2, '0');
+    $('ampm').textContent = state.format === '12' ? (hour >= 12 ? 'PM' : 'AM') : '24-hour time';
+    $('dateLine').textContent = new Intl.DateTimeFormat(undefined, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now);
+    $('timeOfDay').textContent = hour < 6 ? 'Late night' : hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : hour < 21 ? 'Good evening' : 'Night';
+    const auto = hour >= 6 && hour < 18 ? 1 : (hour >= 18 && hour < 21 ? .72 : .45);
+    const level = state.manualNight ? .45 : auto;
+    document.documentElement.style.setProperty('--brightness', (level * state.brightness / 100).toFixed(2));
+    $('nightModeLabel').textContent = state.manualNight ? 'Manual · on' : (auto < 1 ? 'Automatic · dimmed' : 'Automatic');
+  }
+
+  function renderControls() {
+    $('format12').classList.toggle('active', state.format === '12');
+    $('format24').classList.toggle('active', state.format === '24');
+    $('brightnessRange').value = state.brightness;
+    $('brightnessValue').textContent = state.brightness + '%';
+    ['nightToggle', 'nightToggleSettings'].forEach(id => { $(id).classList.toggle('on', state.manualNight); $(id).setAttribute('aria-pressed', state.manualNight); });
+    updateClock();
+  }
+
+  async function loadWeather() {
+    if (!state.city) return;
+    $('weatherLocation').textContent = state.city.label;
+    try {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${state.city.lat}&longitude=${state.city.lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&timezone=auto`;
+      const c = (await (await fetch(url)).json()).current;
+      const w = weatherCodes[c.weather_code] || ['Conditions', '◌'];
+      $('weatherTemp').textContent = Math.round(c.temperature_2m) + '°C';
+      $('weatherCondition').textContent = w[0];
+      $('weatherIcon').textContent = w[1];
+      $('humidity').textContent = c.relative_humidity_2m + '%';
+      $('wind').textContent = Math.round(c.wind_speed_10m) + ' km/h';
+      $('weatherUpdated').textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) { $('weatherCondition').textContent = 'Weather unavailable'; }
+  }
+
+  async function searchCity() {
+    const q = $('cityInput').value.trim(); if (!q) return;
+    $('searchStatus').textContent = 'Searching…'; $('locationResults').innerHTML = '';
+    try {
+      const data = await (await fetch('https://geocoding-api.open-meteo.com/v1/search?count=5&name=' + encodeURIComponent(q))).json();
+      if (!data.results || !data.results.length) { $('searchStatus').textContent = 'No matches found.'; return; }
+      $('searchStatus').textContent = 'Select a location:';
+      data.results.forEach(r => {
+        const b = document.createElement('button'); b.className = 'location-option';
+        const label = [r.name, r.admin1, r.country].filter(Boolean).join(', ');
+        b.textContent = label;
+        b.onclick = () => { state.city = { label, lat: r.latitude, lon: r.longitude }; persist(); $('locationResults').innerHTML = ''; $('searchStatus').textContent = ''; loadWeather(); showToast('Weather set to ' + r.name); };
+        $('locationResults').appendChild(b);
+      });
+    } catch (e) { $('searchStatus').textContent = 'Search failed. Check your connection.'; }
+  }
+
+  async function testSpeed() {
+    const v = $('speedValue'), n = $('speedNote');
+    if (!navigator.onLine) { v.textContent = 'Offline'; n.textContent = 'No connection'; return; }
+    v.textContent = 'Testing…';
+    try {
+      const t0 = performance.now();
+      const r = await fetch('https://speed.cloudflare.com/__down?bytes=5000000&r=' + Date.now(), { cache: 'no-store' });
+      const buf = await r.arrayBuffer();
+      const mbps = (buf.byteLength * 8) / ((performance.now() - t0) / 1000) / 1e6;
+      v.textContent = mbps.toFixed(1) + ' Mbps';
+      n.textContent = 'Download · ' + new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      const c = navigator.connection;
+      v.textContent = c && c.downlink ? '~' + c.downlink + ' Mbps' : 'Unavailable';
+      n.textContent = c && c.downlink ? 'Browser estimate' : 'Test failed';
+    }
+  }
+
+  function updateFullscreen() { $('fullscreenStatus').textContent = document.fullscreenElement ? 'Fullscreen' : 'Windowed'; }
+  async function toggleFullscreen() {
+    try { if (document.fullscreenElement) await document.exitFullscreen(); else await document.documentElement.requestFullscreen(); }
+    catch (e) { showToast('Fullscreen is not available here'); }
+  }
+
+  function inSleep() {
+    if (!state.sleepOn) return false;
+    const n = new Date(), m = n.getHours() * 60 + n.getMinutes();
+    const t = v => { const [h, i] = v.split(':').map(Number); return h * 60 + i; };
+    const a = t(state.offTime), b = t(state.onTime);
+    return a <= b ? (m >= a && m < b) : (m >= a || m < b);
+  }
+  function checkSleep() {
+    const sl = inSleep(), o = $('sleepOverlay');
+    if (sl === !o.classList.contains('hidden')) return;
+    o.classList.toggle('hidden', !sl);
+    if (sl) { if (state.wakeLock) state.wakeLock.release().catch(() => {}); state.wakeLock = null; }
+    else requestWake();
+  }
+  function renderSleep() {
+    $('sleepToggle').classList.toggle('on', state.sleepOn);
+    $('sleepToggle').setAttribute('aria-pressed', state.sleepOn);
+    $('offTime').value = state.offTime; $('onTime').value = state.onTime;
+  }
+  async function requestWake() {
+    if (inSleep()) return;
+    if (!('wakeLock' in navigator)) { $('wakeLabel').textContent = 'Unsupported'; $('wakeStatusDetail').textContent = 'Unsupported'; return; }
+    try {
+      state.wakeLock = await navigator.wakeLock.request('screen');
+      $('wakeLabel').textContent = 'Active'; $('wakeStatusDetail').textContent = 'Active';
+      state.wakeLock.addEventListener('release', () => { $('wakeLabel').textContent = 'Released'; $('wakeStatusDetail').textContent = 'Released'; });
+    } catch (e) {
+      $('wakeLabel').textContent = 'Blocked · tap screen to retry';
+      $('wakeStatusDetail').textContent = 'Blocked (' + (e.name || 'error') + ')';
+    }
+  }
+
+  async function initBattery() {
+    if (!navigator.getBattery) return;
+    try {
+      const b = await navigator.getBattery();
+      const upd = () => {
+        const el = $('batteryText');
+        el.classList.remove('hidden');
+        el.textContent = ' · Battery ' + Math.round(b.level * 100) + '%' + (b.charging ? ' ⚡' : '');
+      };
+      upd();
+      ['levelchange', 'chargingchange'].forEach(ev => b.addEventListener(ev, upd));
+    } catch (e) {}
+  }
+  document.addEventListener('pointerdown', () => { if (!state.wakeLock || state.wakeLock.released) requestWake(); });
+
+  const toggleSettings = open => { $('settingsPanel').classList.toggle('open', open); $('settingsBackdrop').classList.toggle('open', open); };
+  const toggleNight = () => { state.manualNight = !state.manualNight; persist(); renderControls(); };
+
+  $('enterFullscreen').onclick = async () => { await toggleFullscreen(); $('welcome').classList.add('hidden'); requestWake(); };
+  $('skipWelcome').onclick = () => { $('welcome').classList.add('hidden'); requestWake(); };
+  $('fullscreenButton').onclick = toggleFullscreen;
+  $('settingsButton').onclick = () => toggleSettings(true);
+  $('closeSettings').onclick = $('settingsBackdrop').onclick = () => toggleSettings(false);
+  $('format12').onclick = () => { state.format = '12'; persist(); renderControls(); };
+  $('format24').onclick = () => { state.format = '24'; persist(); renderControls(); };
+  $('brightnessRange').oninput = e => { state.brightness = Number(e.target.value); persist(); renderControls(); };
+  $('nightToggle').onclick = $('nightToggleSettings').onclick = toggleNight;
+  $('searchCity').onclick = searchCity;
+  $('speedRetest').onclick = testSpeed;
+  $('sleepToggle').onclick = () => { state.sleepOn = !state.sleepOn; persist(); renderSleep(); checkSleep(); };
+  $('offTime').onchange = e => { state.offTime = e.target.value || '00:00'; persist(); checkSleep(); };
+  $('onTime').onchange = e => { state.onTime = e.target.value || '06:00'; persist(); checkSleep(); };
+  $('cityInput').addEventListener('keydown', e => { if (e.key === 'Enter') searchCity(); });
+  document.addEventListener('fullscreenchange', updateFullscreen);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { checkSleep(); requestWake(); } });
+  window.addEventListener('online', () => { updateConnection(); loadWeather(); testSpeed(); });
+  window.addEventListener('offline', updateConnection);
+
+  updateConnection(); renderControls(); updateFullscreen(); requestWake(); loadWeather(); testSpeed(); initBattery();
+  setInterval(testSpeed, 10 * 60 * 1000);
+  renderSleep(); checkSleep();
+  setInterval(() => { updateClock(); checkSleep(); }, 1000);
+  setInterval(loadWeather, 15 * 60 * 1000);
+})();
+</script>
+</body>
+</html>
